@@ -41,6 +41,35 @@ class FitResult:
 
 
 # --------------------------------------------------------------------------- #
+# Co-pack rules: which units are even ALLOWED to share one package.
+#
+# Enforced here, in the single per-box fit attempt, so every caller inherits it
+# for free: the single-box selector fails (forcing a split), and the splitter
+# never forms an illegal package because _repack() of a conflicting subset just
+# returns None. One check, one place.
+# --------------------------------------------------------------------------- #
+def copack_conflict(units: list[ItemUnit]) -> Optional[str]:
+    """Return a reason if these units may not share one package, else None."""
+    if len(units) <= 1:
+        return None
+    # "Pack as is" / ship-alone: such an item cannot share with anything.
+    for u in units:
+        if u.ship_alone:
+            return (
+                f"{_item_label(u)} must ship alone (pack-as-is) but would share a "
+                f"package with {len(units) - 1} other item(s)."
+            )
+    # Exclusion groups: at most one distinct non-null group per package.
+    groups = sorted({u.exclusion_group for u in units if u.exclusion_group})
+    if len(groups) > 1:
+        return (
+            f"incompatible items in one package: exclusion groups "
+            f"{groups} cannot ship together."
+        )
+    return None
+
+
+# --------------------------------------------------------------------------- #
 # Fast rejects (volume/weight only ever produce a NO, never a YES)
 # --------------------------------------------------------------------------- #
 def fast_reject(
@@ -285,6 +314,10 @@ def try_pack_box(
     biased early) under a wall-clock budget. The first ordering that places
     every unit wins; identical input always yields identical output.
     """
+    conflict = copack_conflict(units)
+    if conflict is not None:
+        return FitResult(ok=False, placements=[], reason=f"{box.name} rejected: {conflict}")
+
     reason = fast_reject(units, box, config)
     if reason is not None:
         return FitResult(ok=False, placements=[], reason=f"{box.name} rejected: {reason}")

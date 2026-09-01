@@ -90,18 +90,48 @@ npm install
 npm run dev        # open http://localhost:5173
 ```
 
-The UI has three tabs:
+The UI has four tabs:
 
 - **Packer** — left: order entry (SKU autocomplete, quantity steppers,
-  paste-a-table import, config sliders with live re-pack); center: Three.js
-  viewer with a placement step-through slider that doubles as pack
-  instructions; right: chosen box(es), fill %, gross vs. billable weight,
-  cost, dunnage estimate, and the full rejection log.
+  paste-a-table import, per-item ship-alone / exclusion-group / goods-type
+  controls, config sliders with live re-pack); center: Three.js viewer with a
+  placement step-through slider that doubles as pack instructions; right:
+  chosen box(es), fill %, gross vs. billable weight, cost, dunnage estimate,
+  and the full rejection log.
+- **Output Sheet** — a light, printable pack slip per container: 3D render of
+  the box and how its insides are generated, container metadata (name, SKU,
+  exterior dimensions, item count, weight, volume, void %), and an itemized
+  table with a per-unit color legend and each item's goods type (e.g. ORM-D).
 - **Box Catalog** — add/edit/deactivate boxes (the `active` toggle trials or
   retires a size without editing JSON).
 - **Batch / What-if** — replay historical orders (CSV) for aggregate box-mix /
   fill / billable-weight stats, and re-run them against a modified catalog to
   answer "would adding a 14×10×6 pay for itself?" without touching the live one.
+
+### Item constraints
+
+Beyond dims/weight/rotation/stacking/fragility, each item supports:
+
+- **`ship_alone`** ("pack as is") — the item must ship in its own package,
+  never combined with any other item. It still gets the smallest catalog box
+  that fits it.
+- **`exclusion_group`** — items with **different** non-null exclusion groups
+  are never packed together (e.g. keep `powder` away from `primers`). Same
+  group or no group is fine. Both rules are enforced in one place
+  (`copack_conflict` in `packer.py`), so the single-box selector and the
+  splitter inherit them automatically.
+- **`goods_type`** — free-text hazmat / commodity class shown on the pack slip
+  (display-only, no packing logic).
+
+### Multi-package splitting
+
+When the weight cap forces a split, the splitter produces a **balanced
+partition** — it minimizes the heaviest package first, then the next, etc.
+That is what "the two (or N) smallest packages" means: two even boxes, not one
+full box plus a nearly-empty one. The neighborhood search uses both item
+**moves** and **swaps** (a swap is required to balance e.g. {30,30}+{20,20}
+into {30,20}+{30,20}). A weight overflow is always answered by another
+package, never a bigger box.
 
 ## Build phases
 

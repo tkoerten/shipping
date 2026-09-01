@@ -16,6 +16,9 @@ function blankRow() {
     stackable: true,
     max_stack_load_lb: "",
     fragile: false,
+    ship_alone: false,
+    exclusion_group: "",
+    goods_type: "",
   };
 }
 
@@ -39,6 +42,9 @@ export default function OrderEntry({ items, setItems, config, setConfig, skuCata
         stackable: c.stackable,
         max_stack_load_lb: c.max_stack_load_lb ?? "",
         fragile: c.fragile,
+        ship_alone: c.ship_alone ?? false,
+        exclusion_group: c.exclusion_group ?? "",
+        goods_type: c.goods_type ?? "",
       });
     } else {
       update(id, { sku });
@@ -140,6 +146,28 @@ function ItemRow({ it, skuCatalog, onChange, onSku, onRemove }) {
             value={it.max_stack_load_lb}
             onChange={(e) => onChange({ max_stack_load_lb: e.target.value })}
           />
+        </label>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <label className="flex items-center gap-1" title="Must ship in its own package (pack-as-is)">
+          <input type="checkbox" checked={!!it.ship_alone}
+                 onChange={(e) => onChange({ ship_alone: e.target.checked })} />
+          ship alone
+        </label>
+        <label className="flex items-center gap-1" title="Items with different exclusion groups never share a package">
+          excl
+          <input className="bg-panel2 border border-edge rounded px-2 py-1 w-20"
+                 placeholder="group"
+                 value={it.exclusion_group || ""}
+                 onChange={(e) => onChange({ exclusion_group: e.target.value })} />
+        </label>
+        <label className="flex items-center gap-1" title="Hazmat / commodity class shown on the pack slip">
+          goods
+          <input className="bg-panel2 border border-edge rounded px-2 py-1 w-20"
+                 placeholder="ORM-D"
+                 value={it.goods_type || ""}
+                 onChange={(e) => onChange({ goods_type: e.target.value })} />
         </label>
       </div>
     </div>

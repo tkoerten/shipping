@@ -28,6 +28,9 @@ class ItemIn(BaseModel):
     stackable: bool = True
     max_stack_load_lb: Optional[float] = None
     fragile: bool = False
+    ship_alone: bool = False
+    exclusion_group: Optional[str] = None
+    goods_type: str = ""
 
     def to_item(self) -> Item:
         return item_from_dict(self.model_dump())

@@ -6,9 +6,11 @@ import Results from "./components/Results.jsx";
 import PackViewer from "./components/PackViewer.jsx";
 import BoxCatalog from "./components/BoxCatalog.jsx";
 import BatchWhatIf from "./components/BatchWhatIf.jsx";
+import ContainerSheet from "./components/ContainerSheet.jsx";
 
 const TABS = [
   { id: "packer", label: "Packer" },
+  { id: "output", label: "Output Sheet" },
   { id: "boxes", label: "Box Catalog" },
   { id: "batch", label: "Batch / What-if" },
 ];
@@ -68,6 +70,9 @@ export default function App() {
             ? null
             : Number(i.max_stack_load_lb),
         fragile: !!i.fragile,
+        ship_alone: !!i.ship_alone,
+        exclusion_group: i.exclusion_group || null,
+        goods_type: i.goods_type || "",
       }));
       const r = await api.pack(payload, cfg);
       setResult(r);
@@ -132,6 +137,12 @@ export default function App() {
           <section className="bg-ink overflow-y-auto">
             <Results result={result} error={error} activePkg={activePkg} setActivePkg={setActivePkg} />
           </section>
+        </div>
+      )}
+
+      {tab === "output" && (
+        <div className="flex-1 overflow-y-auto">
+          <ContainerSheet result={result} />
         </div>
       )}
 

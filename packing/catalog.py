@@ -94,6 +94,9 @@ def item_from_dict(d: dict[str, Any]) -> Item:
             else float(d["max_stack_load_lb"])
         ),
         fragile=bool(d.get("fragile", False)),
+        ship_alone=bool(d.get("ship_alone", False)),
+        exclusion_group=(d.get("exclusion_group") or None),
+        goods_type=str(d.get("goods_type", "")),
     )
 
 
@@ -109,6 +112,9 @@ def item_to_dict(it: Item) -> dict[str, Any]:
         "stackable": it.stackable,
         "max_stack_load_lb": it.max_stack_load_lb,
         "fragile": it.fragile,
+        "ship_alone": it.ship_alone,
+        "exclusion_group": it.exclusion_group,
+        "goods_type": it.goods_type,
     }
 
 

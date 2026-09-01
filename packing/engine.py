@@ -78,6 +78,11 @@ def placement_to_dict(p: Placement) -> dict[str, Any]:
         "position": [round(p.x, 4), round(p.y, 4), round(p.z, 4)],
         "orientation": [round(p.dx, 4), round(p.dy, 4), round(p.dz, 4)],
         "weight_lb": p.unit.weight_lb,
+        "length_in": p.unit.length_in,
+        "width_in": p.unit.width_in,
+        "height_in": p.unit.height_in,
+        "goods_type": p.unit.goods_type,
+        "exclusion_group": p.unit.exclusion_group,
     }
 
 
@@ -93,10 +98,16 @@ def package_to_dict(pkg: PackedBox) -> dict[str, Any]:
         "void_volume_cu_in": round(pkg.void_volume_cu_in, 1),
         "estimated_dunnage": estimate_dunnage(pkg.void_volume_cu_in),
         "box_cost": pkg.box.cost,
+        "wall_thickness_in": pkg.box.wall_thickness_in,
         "interior": {
             "length": pkg.box.interior_dims().length_in,
             "width": pkg.box.interior_dims().width_in,
             "height": pkg.box.interior_dims().height_in,
+        },
+        "exterior": {
+            "length": round(pkg.box.interior_dims().length_in + 2 * pkg.box.wall_thickness_in, 3),
+            "width": round(pkg.box.interior_dims().width_in + 2 * pkg.box.wall_thickness_in, 3),
+            "height": round(pkg.box.interior_dims().height_in + 2 * pkg.box.wall_thickness_in, 3),
         },
     }
 

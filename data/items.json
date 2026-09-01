@@ -11,7 +11,8 @@
       "rotation": "free",
       "stackable": true,
       "max_stack_load_lb": null,
-      "fragile": false
+      "fragile": false,
+      "goods_type": "ORM-D"
     },
     "AMMO-556-500": {
       "sku": "AMMO-556-500",
@@ -23,7 +24,8 @@
       "rotation": "free",
       "stackable": true,
       "max_stack_load_lb": null,
-      "fragile": false
+      "fragile": false,
+      "goods_type": "ORM-D"
     },
     "AMMO-45ACP-500": {
       "sku": "AMMO-45ACP-500",
@@ -35,7 +37,8 @@
       "rotation": "free",
       "stackable": true,
       "max_stack_load_lb": null,
-      "fragile": false
+      "fragile": false,
+      "goods_type": "ORM-D"
     },
     "AMMO-12GA-250": {
       "sku": "AMMO-12GA-250",
@@ -47,7 +50,8 @@
       "rotation": "free",
       "stackable": true,
       "max_stack_load_lb": 60.0,
-      "fragile": false
+      "fragile": false,
+      "goods_type": "ORM-D"
     },
     "OPTIC-RDS-1": {
       "sku": "OPTIC-RDS-1",
@@ -59,7 +63,8 @@
       "rotation": "upright",
       "stackable": true,
       "max_stack_load_lb": 5.0,
-      "fragile": true
+      "fragile": true,
+      "goods_type": ""
     }
   }
 }

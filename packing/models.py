@@ -103,6 +103,16 @@ class Item:
     stackable: bool = True
     max_stack_load_lb: Optional[float] = None
     fragile: bool = False
+    # "Pack as is": this item must ship in its own package, never combined with
+    # any other item (SIOC-style). It still gets the smallest catalog overbox
+    # that fits it.
+    ship_alone: bool = False
+    # Items with DIFFERENT non-null exclusion groups may never share a package
+    # (e.g. keep "powder" away from "primers"). Same group or no group is fine.
+    exclusion_group: Optional[str] = None
+    # Free-text hazmat / commodity classification for the pack slip, e.g.
+    # "ORM-D" for limited-quantity ammunition. Display-only; no packing logic.
+    goods_type: str = ""
 
     def __post_init__(self) -> None:
         if self.rotation not in _VALID_ROTATIONS:
@@ -146,6 +156,9 @@ class ItemUnit:
     stackable: bool
     max_stack_load_lb: Optional[float]
     fragile: bool
+    ship_alone: bool = False
+    exclusion_group: Optional[str] = None
+    goods_type: str = ""
 
     @property
     def volume_cu_in(self) -> float:
@@ -181,6 +194,9 @@ def expand_items(items: list[Item]) -> list[ItemUnit]:
                     stackable=it.stackable,
                     max_stack_load_lb=it.max_stack_load_lb,
                     fragile=it.fragile,
+                    ship_alone=it.ship_alone,
+                    exclusion_group=it.exclusion_group,
+                    goods_type=it.goods_type,
                 )
             )
             uid += 1

@@ -47,8 +47,14 @@ def split_pack(
     packages: list[_Package] = []
     for unit in ordered:
         placed = False
-        # Try to add to an existing package (first-fit over current packages).
-        for pkg in packages:
+        # Add to the LIGHTEST existing package that can still take it. Preferring
+        # the emptiest feasible package spreads weight out from the start, so the
+        # balancing sweep has less to undo and splits come out even.
+        candidates = sorted(
+            packages,
+            key=lambda p: (p.packed.billable_weight_lb if p.packed else 0.0),
+        )
+        for pkg in candidates:
             trial = pkg.units + [unit]
             packed = _repack(trial, boxes, config)
             if packed is not None:
@@ -89,67 +95,101 @@ def split_pack(
 
 
 def _solution_score(packages: list[_Package]) -> tuple:
-    """Rank a whole split solution: fewer packages, then total billable weight,
+    """Rank a whole split solution. Lower is better.
 
-    then total box cost. Lower is better.
+    1. package count (fewest)
+    2. BALANCE: the per-package billable weights sorted descending, compared
+       lexicographically -- this minimizes the heaviest package first, then the
+       next, etc. That is what "the two (or N) smallest packages" means: a
+       balanced split, not one full box plus a nearly-empty one.
+    3. total box cost (tie-break)
+    4. total billable weight (tie-break)
+
+    Balance leads cost deliberately: a weight overflow is answered by splitting
+    into the smallest possible packages, matching how carriers bill dense parcels
+    (dimensional weight is still weight). Cost only breaks ties between equally
+    balanced splits.
     """
-    live = [p for p in packages if p.units]
-    total_billable = sum(
-        p.packed.billable_weight_lb for p in live if p.packed is not None
+    live = [p for p in packages if p.units and p.packed is not None]
+    billables = sorted((p.packed.billable_weight_lb for p in live), reverse=True)
+    total_cost = sum(p.packed.box.cost for p in live)
+    total_billable = sum(billables)
+    return (
+        len(live),
+        tuple(round(b, 4) for b in billables),
+        round(total_cost, 4),
+        round(total_billable, 4),
     )
-    total_cost = sum(p.packed.box.cost for p in live if p.packed is not None)
-    return (len(live), round(total_billable, 4), round(total_cost, 4))
 
 
 def _balance(packages: list[_Package], boxes: list[Box], config: Config) -> None:
-    """Repeatedly move a unit to a better package while it improves the score."""
-    improved = True
-    guard = 0
-    while improved and guard < 1000:
-        improved = False
-        guard += 1
-        base_score = _solution_score(packages)
-        for src in packages:
-            if not src.units:
-                continue
-            for unit in list(src.units):
-                for dst in packages:
-                    if dst is src:
-                        continue
-                    # Try moving `unit` from src to dst.
-                    new_src_units = [u for u in src.units if u.uid != unit.uid]
-                    new_dst_units = dst.units + [unit]
-                    dst_packed = _repack(new_dst_units, boxes, config)
-                    if dst_packed is None:
-                        continue
-                    src_packed = (
-                        _repack(new_src_units, boxes, config)
-                        if new_src_units
-                        else None
-                    )
-                    if new_src_units and src_packed is None:
-                        continue  # source would no longer pack -- illegal move
+    """Hill-climb toward a balanced split.
 
-                    # Tentatively apply and score.
-                    old = (
-                        list(src.units), src.packed,
-                        list(dst.units), dst.packed,
-                    )
-                    src.units, src.packed = new_src_units, src_packed
-                    dst.units, dst.packed = new_dst_units, dst_packed
-                    if _solution_score(packages) < base_score:
-                        improved = True
-                        break
-                    # Revert.
-                    src.units, src.packed, dst.units, dst.packed = (
-                        old[0], old[1], old[2], old[3],
-                    )
-                if improved:
-                    break
-            if improved:
-                break
+    The neighborhood is both MOVES (relocate one unit to another package) and
+    SWAPS (trade a unit between two packages). Swaps matter: two packages of
+    {30,30} and {20,20} cannot be balanced to {30,20}+{30,20} by any single
+    move (the target overflows), only by a swap. First improving neighbor wins;
+    repeat until no neighbor helps.
+    """
+    guard = 0
+    while guard < 1000:
+        guard += 1
+        base = _solution_score(packages)
+        if not (_try_moves(packages, boxes, config, base)
+                or _try_swaps(packages, boxes, config, base)):
+            break
     # Drop any package emptied by the sweep.
     packages[:] = [p for p in packages if p.units]
+
+
+def _accept(
+    packages, src, dst, new_src_units, new_dst_units, boxes, config, base
+) -> bool:
+    """Tentatively repack src/dst with new contents; keep it iff the whole
+    solution's score improves. src/dst are elements of `packages`, so mutating
+    them mutates the scored solution directly."""
+    dst_packed = _repack(new_dst_units, boxes, config)
+    if dst_packed is None:
+        return False
+    src_packed = _repack(new_src_units, boxes, config) if new_src_units else None
+    if new_src_units and src_packed is None:
+        return False
+    old = (list(src.units), src.packed, list(dst.units), dst.packed)
+    src.units, src.packed = new_src_units, src_packed
+    dst.units, dst.packed = new_dst_units, dst_packed
+    if _solution_score(packages) < base:
+        return True
+    src.units, src.packed, dst.units, dst.packed = old
+    return False
+
+
+def _try_moves(packages, boxes, config, base) -> bool:
+    for src in packages:
+        if not src.units:
+            continue
+        for unit in list(src.units):
+            for dst in packages:
+                if dst is src:
+                    continue
+                new_src = [u for u in src.units if u.uid != unit.uid]
+                new_dst = dst.units + [unit]
+                if _accept(packages, src, dst, new_src, new_dst, boxes, config, base):
+                    return True
+    return False
+
+
+def _try_swaps(packages, boxes, config, base) -> bool:
+    live = [p for p in packages if p.units]
+    for i in range(len(live)):
+        for j in range(i + 1, len(live)):
+            a, b = live[i], live[j]
+            for ua in list(a.units):
+                for ub in list(b.units):
+                    new_a = [u for u in a.units if u.uid != ua.uid] + [ub]
+                    new_b = [u for u in b.units if u.uid != ub.uid] + [ua]
+                    if _accept(packages, a, b, new_a, new_b, boxes, config, base):
+                        return True
+    return False
 
 
 def _label(u: ItemUnit) -> str:
