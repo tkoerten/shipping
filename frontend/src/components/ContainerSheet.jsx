@@ -34,8 +34,12 @@ export default function ContainerSheet({ result }) {
 }
 
 function Container({ pkg, index }) {
+  // Exterior is used only to draw the cardboard shell in 3D. Dimensions,
+  // Volume and Void are reported on the INTERIOR (usable inside of the box),
+  // matching the warehouse's current pack software so the numbers reconcile.
   const ext = pkg.exterior || pkg.interior;
-  const volume = ext.length * ext.width * ext.height;
+  const dims = pkg.interior;
+  const volume = dims.length * dims.width * dims.height;
   const itemVol = pkg.items.reduce(
     (s, it) => s + it.orientation[0] * it.orientation[1] * it.orientation[2],
     0
@@ -84,7 +88,7 @@ function Container({ pkg, index }) {
         <Meta label="Weight" value={`${fmt(pkg.gross_weight_lb, 2)} lb`} right />
         <Meta
           label="Dimensions"
-          value={`${fmt(ext.length, 3)} L x ${fmt(ext.width, 3)} W x ${fmt(ext.height, 3)} H in`}
+          value={`${fmt(dims.length, 2)} L x ${fmt(dims.width, 2)} W x ${fmt(dims.height, 2)} H in`}
         />
         <Meta label="Volume" value={`${fmt(volume, 1)} in³`} right />
         <div />
