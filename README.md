@@ -77,12 +77,38 @@ item conservation), known-answer degenerate fixtures (exact fit, 0.01" over,
 diagonal-only must fail, 60 lb under a 65 lb cap), the weight-split test (four
 20 lb items → two packages), and a 100-run determinism check.
 
+## Running the app
+
+```bash
+# 1. Backend (FastAPI on :8000)
+pip install -r requirements.txt
+python -m uvicorn api.main:app --reload --port 8000
+
+# 2. Frontend (Vite dev server on :5173, proxies /api to :8000)
+cd frontend
+npm install
+npm run dev        # open http://localhost:5173
+```
+
+The UI has three tabs:
+
+- **Packer** — left: order entry (SKU autocomplete, quantity steppers,
+  paste-a-table import, config sliders with live re-pack); center: Three.js
+  viewer with a placement step-through slider that doubles as pack
+  instructions; right: chosen box(es), fill %, gross vs. billable weight,
+  cost, dunnage estimate, and the full rejection log.
+- **Box Catalog** — add/edit/deactivate boxes (the `active` toggle trials or
+  retires a size without editing JSON).
+- **Batch / What-if** — replay historical orders (CSV) for aggregate box-mix /
+  fill / billable-weight stats, and re-run them against a modified catalog to
+  answer "would adding a 14×10×6 pay for itself?" without touching the live one.
+
 ## Build phases
 
 1. Engine core + CLI + tests ✅
 2. Box selection ranking, billable weight, explanation log ✅
 3. Multi-package splitting + balancing sweep ✅
-4. FastAPI layer
-5. React UI (order entry + results)
-6. Three.js viewer + placement step-through
-7. SKU catalog, batch mode, what-if catalog analysis
+4. FastAPI layer ✅
+5. React UI (order entry + results) ✅
+6. Three.js viewer + placement step-through ✅
+7. SKU catalog, batch mode, what-if catalog analysis ✅

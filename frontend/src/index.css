@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Warehouse monitor: big type, high contrast, legible from a few feet back. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Range sliders sized up for touch and distance. */
+input[type="range"] {
+  accent-color: #39d98a;
+  height: 1.5rem;
+}
+
+.num-input {
+  @apply bg-panel2 border border-edge rounded px-2 py-1 text-right tabular-nums
+    focus:outline-none focus:border-accent2;
+}
+
+.btn {
+  @apply px-3 py-2 rounded font-semibold transition-colors;
+}
+.btn-accent {
+  @apply btn bg-accent text-ink hover:brightness-110;
+}
+.btn-ghost {
+  @apply btn bg-panel2 border border-edge hover:border-accent2;
+}
+.tag {
+  @apply text-xs px-2 py-0.5 rounded-full border;
+}
