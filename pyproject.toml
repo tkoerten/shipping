@@ -1,0 +1,13 @@
+[project]
+name = "cartonization-engine"
+version = "0.1.0"
+description = "Extreme-point 3D bin packing cartonization engine (pure-stdlib core) + FastAPI."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.setuptools.packages.find]
+include = ["packing*"]

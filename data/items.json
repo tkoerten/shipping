@@ -1,0 +1,65 @@
+{
+  "_comment": "SKU catalog keyed by SKU. Dimensions in inches, weight in pounds. rotation: free|upright|fixed. max_stack_load_lb null = unlimited.",
+  "items": {
+    "AMMO-9MM-1000": {
+      "sku": "AMMO-9MM-1000",
+      "description": "9mm 115gr FMJ, 1000rd case",
+      "length": 11.5,
+      "width": 7.0,
+      "height": 5.5,
+      "weight_lb": 27.4,
+      "rotation": "free",
+      "stackable": true,
+      "max_stack_load_lb": null,
+      "fragile": false
+    },
+    "AMMO-556-500": {
+      "sku": "AMMO-556-500",
+      "description": "5.56x45 55gr FMJ, 500rd case",
+      "length": 9.0,
+      "width": 6.0,
+      "height": 4.5,
+      "weight_lb": 15.8,
+      "rotation": "free",
+      "stackable": true,
+      "max_stack_load_lb": null,
+      "fragile": false
+    },
+    "AMMO-45ACP-500": {
+      "sku": "AMMO-45ACP-500",
+      "description": ".45 ACP 230gr FMJ, 500rd case",
+      "length": 8.5,
+      "width": 5.5,
+      "height": 4.0,
+      "weight_lb": 19.2,
+      "rotation": "free",
+      "stackable": true,
+      "max_stack_load_lb": null,
+      "fragile": false
+    },
+    "AMMO-12GA-250": {
+      "sku": "AMMO-12GA-250",
+      "description": "12ga 2-3/4in buckshot, 250rd case",
+      "length": 12.0,
+      "width": 8.0,
+      "height": 6.0,
+      "weight_lb": 22.5,
+      "rotation": "free",
+      "stackable": true,
+      "max_stack_load_lb": 60.0,
+      "fragile": false
+    },
+    "OPTIC-RDS-1": {
+      "sku": "OPTIC-RDS-1",
+      "description": "Red dot sight, boxed",
+      "length": 5.0,
+      "width": 3.5,
+      "height": 3.0,
+      "weight_lb": 0.9,
+      "rotation": "upright",
+      "stackable": true,
+      "max_stack_load_lb": 5.0,
+      "fragile": true
+    }
+  }
+}

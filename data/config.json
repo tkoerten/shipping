@@ -1,0 +1,9 @@
+{
+  "_comment": "Saved packing defaults. Overridable per /api/pack request.",
+  "dunnage_reserve_pct": 0.15,
+  "clearance_in": 0.25,
+  "max_package_weight_lb": 65.0,
+  "dim_divisor": 139.0,
+  "allow_split": true,
+  "max_packages": 5
+}

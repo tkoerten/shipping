@@ -1,0 +1,137 @@
+{
+  "_comment": "Cartonization box catalog. Dimensions are INTERIOR (usable) inches unless dimensions_are is 'exterior'. cost and max_gross_weight_lb are PLACEHOLDERS to be replaced with real values. If max_gross_weight_lb is null the engine falls back to the request's global max_package_weight_lb.",
+  "boxes": [
+    {
+      "id": "lq-8x5x3_5",
+      "name": "LQ 8x5x3.5",
+      "interior": { "length": 8.0, "width": 5.0, "height": 3.5 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.2,
+      "cost": 0.28,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-10x8x6",
+      "name": "LQ 10x8x6",
+      "interior": { "length": 10.0, "width": 8.0, "height": 6.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.4,
+      "cost": 0.48,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-10x8x6-test",
+      "name": "LQ 10x8x6-test",
+      "interior": { "length": 10.0, "width": 8.0, "height": 6.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.4,
+      "cost": 0.48,
+      "max_gross_weight_lb": 65.0,
+      "active": false,
+      "notes": "Duplicate test record. Inactive by default."
+    },
+    {
+      "id": "lq-12x12x8",
+      "name": "LQ 12x12x8",
+      "interior": { "length": 12.0, "width": 12.0, "height": 8.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.55,
+      "cost": 0.66,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-13x9x7",
+      "name": "LQ 13x9x7",
+      "interior": { "length": 13.0, "width": 9.0, "height": 7.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.55,
+      "cost": 0.72,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-14x11x11",
+      "name": "LQ 14x11x11",
+      "interior": { "length": 14.0, "width": 11.0, "height": 11.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.7,
+      "cost": 0.9,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-15x6_5x4",
+      "name": "LQ 15x6.5x4",
+      "interior": { "length": 15.0, "width": 6.5, "height": 4.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.4,
+      "cost": 0.55,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-16x8x8",
+      "name": "LQ 16x8x8",
+      "interior": { "length": 16.0, "width": 8.0, "height": 8.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.6,
+      "cost": 0.78,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-16x8x8-test",
+      "name": "LQ 16x8x8-test",
+      "interior": { "length": 16.0, "width": 8.0, "height": 8.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.6,
+      "cost": 0.78,
+      "max_gross_weight_lb": 65.0,
+      "active": false,
+      "notes": "Duplicate test record. Inactive by default."
+    },
+    {
+      "id": "lq-16x12x8",
+      "name": "LQ 16x12x8",
+      "interior": { "length": 16.0, "width": 12.0, "height": 8.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.75,
+      "cost": 0.95,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    },
+    {
+      "id": "lq-18x12x10",
+      "name": "LQ 18x12x10",
+      "interior": { "length": 18.0, "width": 12.0, "height": 10.0 },
+      "dimensions_are": "interior",
+      "wall_thickness": 0.125,
+      "tare_weight_lb": 0.9,
+      "cost": 1.15,
+      "max_gross_weight_lb": 65.0,
+      "active": true,
+      "notes": ""
+    }
+  ]
+}
