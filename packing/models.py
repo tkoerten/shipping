@@ -107,9 +107,6 @@ class Item:
     # any other item (SIOC-style). It still gets the smallest catalog overbox
     # that fits it.
     ship_alone: bool = False
-    # Items with DIFFERENT non-null exclusion groups may never share a package
-    # (e.g. keep "powder" away from "primers"). Same group or no group is fine.
-    exclusion_group: Optional[str] = None
     # Free-text hazmat / commodity classification for the pack slip, e.g.
     # "ORM-D" for limited-quantity ammunition. Display-only; no packing logic.
     goods_type: str = ""
@@ -157,7 +154,6 @@ class ItemUnit:
     max_stack_load_lb: Optional[float]
     fragile: bool
     ship_alone: bool = False
-    exclusion_group: Optional[str] = None
     goods_type: str = ""
 
     @property
@@ -195,7 +191,6 @@ def expand_items(items: list[Item]) -> list[ItemUnit]:
                     max_stack_load_lb=it.max_stack_load_lb,
                     fragile=it.fragile,
                     ship_alone=it.ship_alone,
-                    exclusion_group=it.exclusion_group,
                     goods_type=it.goods_type,
                 )
             )

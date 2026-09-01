@@ -29,7 +29,6 @@ class ItemIn(BaseModel):
     max_stack_load_lb: Optional[float] = None
     fragile: bool = False
     ship_alone: bool = False
-    exclusion_group: Optional[str] = None
     goods_type: str = ""
 
     def to_item(self) -> Item:

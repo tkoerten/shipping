@@ -59,13 +59,6 @@ def copack_conflict(units: list[ItemUnit]) -> Optional[str]:
                 f"{_item_label(u)} must ship alone (pack-as-is) but would share a "
                 f"package with {len(units) - 1} other item(s)."
             )
-    # Exclusion groups: at most one distinct non-null group per package.
-    groups = sorted({u.exclusion_group for u in units if u.exclusion_group})
-    if len(groups) > 1:
-        return (
-            f"incompatible items in one package: exclusion groups "
-            f"{groups} cannot ship together."
-        )
     return None
 
 

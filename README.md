@@ -108,30 +108,35 @@ The UI has four tabs:
   fill / billable-weight stats, and re-run them against a modified catalog to
   answer "would adding a 14×10×6 pay for itself?" without touching the live one.
 
+### Optimization objective
+
+The engine optimizes **purely for the smallest box**, given the physical
+constraints and the available active boxes. It does **not** use billable
+weight or carrier cost to choose a box (there is no rate table). The weight cap
+is still a hard constraint — a box only wins if every item fits and the package
+is under the cap — so the smallest box that gets selected is a safe, closeable
+choice. (This intentionally overrides the original spec's "billable weight
+before volume" ranking, per operator direction.)
+
+Ranking:
+
+- **Single box** — the smallest interior volume that fits; ties broken by cost
+  then box id (deterministic).
+- **Split** — fewest packages first, then the smallest boxes: the per-package
+  box volumes sorted descending, compared lexicographically (minimize the
+  largest box, then the next). That is "the two (or N) smallest packages" — a
+  weight overflow is always answered by another package, never a bigger box.
+
 ### Item constraints
 
 Beyond dims/weight/rotation/stacking/fragility, each item supports:
 
 - **`ship_alone`** ("pack as is") — the item must ship in its own package,
   never combined with any other item. It still gets the smallest catalog box
-  that fits it.
-- **`exclusion_group`** — items with **different** non-null exclusion groups
-  are never packed together (e.g. keep `powder` away from `primers`). Same
-  group or no group is fine. Both rules are enforced in one place
-  (`copack_conflict` in `packer.py`), so the single-box selector and the
-  splitter inherit them automatically.
+  that fits it. Enforced in one place (`copack_conflict` in `packer.py`), so
+  the single-box selector and the splitter inherit it automatically.
 - **`goods_type`** — free-text hazmat / commodity class shown on the pack slip
-  (display-only, no packing logic).
-
-### Multi-package splitting
-
-When the weight cap forces a split, the splitter produces a **balanced
-partition** — it minimizes the heaviest package first, then the next, etc.
-That is what "the two (or N) smallest packages" means: two even boxes, not one
-full box plus a nearly-empty one. The neighborhood search uses both item
-**moves** and **swaps** (a swap is required to balance e.g. {30,30}+{20,20}
-into {30,20}+{30,20}). A weight overflow is always answered by another
-package, never a bigger box.
+  (e.g. `ORM-D`); display-only, no packing logic.
 
 ## Build phases
 

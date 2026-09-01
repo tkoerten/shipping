@@ -1,5 +1,5 @@
-"""Tests for balanced N-way splitting and the co-pack constraints
-(ship-alone / "pack as is" and exclusion groups)."""
+"""Tests for smallest-box optimization (single box + N-way split) and the
+ship-alone / "pack as is" constraint."""
 from __future__ import annotations
 
 from packing import Config, pack, try_pack_box
@@ -19,46 +19,80 @@ def _catalog():
     ]
 
 
+def _box_names(result):
+    return sorted(p.box.id for p in result.packages)
+
+
 # --------------------------------------------------------------------------- #
-# #1 Balanced partition
+# Smallest box -- single package
 # --------------------------------------------------------------------------- #
-def test_four_20lb_split_is_balanced_2_and_2():
-    # 4x20 = 80 > 64 cap -> 2 packages. Balanced means 2+2 (40/40), never the
-    # greedy 3+1 (60/20).
+def test_single_item_picks_the_smallest_fitting_box(catalog_boxes):
+    # A single 9mm case (11.5x7x5.5) -> the smallest catalog box that fits it is
+    # LQ 13x9x7 (819 cu-in), not a larger box that merely bills the same.
+    item = make_item("AMMO-9MM-1000", 11.5, 7.0, 5.5, 27.4)
+    result = pack([item], catalog_boxes, CFG64)
+    assert result.ok
+    assert result.total_packages == 1
+    assert result.packages[0].box.name == "LQ 13x9x7", result.packages[0].box.name
+
+
+def test_smaller_box_wins_even_when_a_bigger_one_also_fits():
+    small = make_box("small", 12, 10, 8, cost=1.0, max_gross=64.0)   # 960 cu-in
+    big = make_box("big", 18, 12, 12, cost=1.0, max_gross=64.0)      # 2592 cu-in
+    item = make_item("X", 10, 8, 6, 5.0)
+    result = pack([item], [big, small], CFG64)
+    assert result.ok
+    assert result.packages[0].box.id == "small"
+
+
+# --------------------------------------------------------------------------- #
+# Smallest boxes -- weight split
+# --------------------------------------------------------------------------- #
+def test_weight_split_produces_two_packages_under_cap():
+    # 4x20 = 80 lb > 64 -> 2 packages, each under the cap.
     items = [make_item("W", 6, 5, 4, 20.0, quantity=4)]
     result = pack(items, _catalog(), CFG64)
     assert result.ok
-    counts = sorted(len(p.placements) for p in result.packages)
-    assert counts == [2, 2], counts
+    assert result.total_packages == 2
     for p in result.packages:
         assert p.gross_weight_lb <= 64.0 + 1e-6
 
 
-def test_six_20lb_split_is_balanced_3_and_3():
-    # 6x20 = 120 -> min 2 packages (each <= 3 items at 60 lb). Balanced 3/3.
+def test_split_prefers_the_two_smallest_boxes():
+    # 4x20: one package must hold >=2 items (needs the medium box); the other
+    # holds a single item and can use the SMALL box. So the smallest-box split
+    # is {m, s} -- not two mediums. This is "the two smallest packages".
+    items = [make_item("W", 6, 5, 4, 20.0, quantity=4)]
+    result = pack(items, _catalog(), CFG64)
+    assert _box_names(result) == ["m", "s"], _box_names(result)
+
+
+def test_split_uses_medium_pair_only_when_forced():
+    # 6x20: the small box cannot hold 3 items, so each of the two packages needs
+    # the medium box -> {m, m}. Nothing smaller is possible.
     items = [make_item("W", 5, 5, 4, 20.0, quantity=6)]
     result = pack(items, _catalog(), CFG64)
-    assert result.ok
-    counts = sorted(len(p.placements) for p in result.packages)
-    assert counts == [3, 3], counts
+    assert result.total_packages == 2
+    assert _box_names(result) == ["m", "m"], _box_names(result)
 
 
-def test_balanced_split_minimizes_the_heaviest_package():
-    # Mixed weights: heaviest package should be as light as the split allows.
-    items = [
-        make_item("A", 6, 5, 4, 30.0, quantity=2),
-        make_item("B", 6, 5, 4, 20.0, quantity=2),
-    ]  # total 100 lb -> 2 packages
+def test_split_never_uses_a_bigger_box_for_a_weight_overflow():
+    # A single box could hold all 4 geometrically, but weight forces a split.
+    # The result must never be a single (bigger) box.
+    items = [make_item("W", 6, 5, 4, 20.0, quantity=4)]
+    result = pack(items, _catalog(), CFG64)
+    assert result.total_packages >= 2
+
+
+def test_item_conservation_across_split():
+    items = [make_item("W", 5, 5, 4, 18.0, quantity=7)]
     result = pack(items, _catalog(), CFG64)
     assert result.ok
-    assert result.total_packages == 2
-    heaviest = max(p.gross_weight_lb for p in result.packages)
-    # Best balance pairs a 30 with a 20 in each package -> ~50 lb each, not 60/40.
-    assert heaviest <= 51.0, [p.gross_weight_lb for p in result.packages]
+    assert sum(len(p.placements) for p in result.packages) == 7
 
 
 # --------------------------------------------------------------------------- #
-# #2a ship-alone / "pack as is"
+# ship-alone / "pack as is"
 # --------------------------------------------------------------------------- #
 def test_ship_alone_gets_its_own_package():
     items = [
@@ -68,7 +102,6 @@ def test_ship_alone_gets_its_own_package():
     result = pack(items, _catalog(), CFG64)
     assert result.ok
     assert result.total_packages == 2
-    # The SOLO package holds exactly one unit, and it's SOLO.
     solo_pkgs = [p for p in result.packages
                  if any(pl.unit.sku == "SOLO" for pl in p.placements)]
     assert len(solo_pkgs) == 1
@@ -83,8 +116,6 @@ def test_single_ship_alone_item_packs_normally():
 
 
 def test_ship_alone_blocks_single_box_even_when_it_would_fit():
-    # Both items are tiny and light -- geometrically/weight-wise one box is fine,
-    # but ship_alone forbids combining, so no single box can hold both.
     items = [
         make_item("SOLO", 3, 3, 3, 1.0, ship_alone=True),
         make_item("X", 3, 3, 3, 1.0),
@@ -96,55 +127,8 @@ def test_ship_alone_blocks_single_box_even_when_it_would_fit():
     assert "ship alone" in res.reason
 
 
-# --------------------------------------------------------------------------- #
-# #2b exclusion groups
-# --------------------------------------------------------------------------- #
-def test_different_exclusion_groups_never_share_a_package():
-    items = [
-        make_item("POWDER", 5, 4, 3, 2.0, exclusion_group="powder"),
-        make_item("PRIMER", 5, 4, 3, 2.0, exclusion_group="primers"),
-    ]
-    result = pack(items, _catalog(), CFG64)
-    assert result.ok
-    assert result.total_packages == 2
-    for p in result.packages:
-        groups = {pl.unit.exclusion_group for pl in p.placements}
-        assert len([g for g in groups if g]) <= 1
-
-
-def test_same_exclusion_group_may_share():
-    items = [
-        make_item("POWDER-A", 5, 4, 3, 2.0, exclusion_group="powder"),
-        make_item("POWDER-B", 5, 4, 3, 2.0, exclusion_group="powder"),
-    ]
-    result = pack(items, _catalog(), CFG64)
-    assert result.ok
-    assert result.total_packages == 1
-
-
-def test_ungrouped_item_may_share_with_grouped():
-    items = [
-        make_item("POWDER", 5, 4, 3, 2.0, exclusion_group="powder"),
-        make_item("PLAIN", 5, 4, 3, 2.0),
-    ]
-    result = pack(items, _catalog(), CFG64)
-    assert result.ok
-    assert result.total_packages == 1
-
-
 def test_copack_conflict_helper():
-    a = expand_items([make_item("A", 3, 3, 3, 1.0, exclusion_group="x")])[0]
-    b = expand_items([make_item("B", 3, 3, 3, 1.0, exclusion_group="y")])[0]
+    a = expand_items([make_item("A", 3, 3, 3, 1.0, ship_alone=True)])[0]
+    b = expand_items([make_item("B", 3, 3, 3, 1.0)])[0]
     assert copack_conflict([a, b]) is not None
-    assert copack_conflict([a]) is None
-
-
-def test_exclusion_reason_surfaces_when_split_disabled():
-    items = [
-        make_item("POWDER", 5, 4, 3, 2.0, exclusion_group="powder"),
-        make_item("PRIMER", 5, 4, 3, 2.0, exclusion_group="primers"),
-    ]
-    result = pack(items, _catalog(),
-                  Config(time_budget_ms=60, max_package_weight_lb=64.0, allow_split=False))
-    assert not result.ok
-    assert any("exclusion groups" in line for line in result.explanation)
+    assert copack_conflict([b]) is None

@@ -98,27 +98,28 @@ def _solution_score(packages: list[_Package]) -> tuple:
     """Rank a whole split solution. Lower is better.
 
     1. package count (fewest)
-    2. BALANCE: the per-package billable weights sorted descending, compared
-       lexicographically -- this minimizes the heaviest package first, then the
-       next, etc. That is what "the two (or N) smallest packages" means: a
-       balanced split, not one full box plus a nearly-empty one.
-    3. total box cost (tie-break)
-    4. total billable weight (tie-break)
+    2. SMALLEST BOXES: the per-package box interior volumes sorted descending,
+       compared lexicographically -- this minimizes the largest box first, then
+       the next, etc. That is what "the two (or N) smallest packages" means: two
+       even, small boxes rather than one big box plus a nearly-empty one.
+    3. total box volume (tie-break)
+    4. total box cost (tie-break)
 
-    Balance leads cost deliberately: a weight overflow is answered by splitting
-    into the smallest possible packages, matching how carriers bill dense parcels
-    (dimensional weight is still weight). Cost only breaks ties between equally
-    balanced splits.
+    Box size leads deliberately, per operator direction: a weight overflow is
+    answered by splitting into the smallest possible boxes. Cost only breaks
+    ties between equally small splits.
     """
     live = [p for p in packages if p.units and p.packed is not None]
-    billables = sorted((p.packed.billable_weight_lb for p in live), reverse=True)
+    volumes = sorted(
+        (p.packed.box.interior_dims().volume_cu_in for p in live), reverse=True
+    )
+    total_volume = sum(volumes)
     total_cost = sum(p.packed.box.cost for p in live)
-    total_billable = sum(billables)
     return (
         len(live),
-        tuple(round(b, 4) for b in billables),
+        tuple(round(v, 4) for v in volumes),
+        round(total_volume, 4),
         round(total_cost, 4),
-        round(total_billable, 4),
     )
 
 

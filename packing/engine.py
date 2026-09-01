@@ -82,7 +82,6 @@ def placement_to_dict(p: Placement) -> dict[str, Any]:
         "width_in": p.unit.width_in,
         "height_in": p.unit.height_in,
         "goods_type": p.unit.goods_type,
-        "exclusion_group": p.unit.exclusion_group,
     }
 
 

@@ -31,18 +31,22 @@ def billable_weight_lb(packed: PackedBox) -> float:
 
 
 def _rank_key(packed: PackedBox) -> tuple:
-    """Winner ranking for single-box solutions.
+    """Winner ranking for single-box solutions: PURELY the smallest box.
 
-    1. package count (always 1 here; kept for symmetry with split solutions)
-    2. billable weight (fewest)
-    3. box cost
-    4. interior volume (smaller)
+    Per operator direction we optimize for the smallest box that fits under all
+    constraints -- not billable weight or carrier cost. The weight cap is still
+    a hard constraint (a box only reaches ranking if every item fits and the
+    package is under the cap), so the smallest box that gets here is a safe,
+    closeable choice.
+
+    1. interior volume (smallest box wins)
+    2. box cost (tie-break between equal-size boxes: cheaper)
+    3. box id (final deterministic tie-break)
     """
     return (
-        1,
-        round(packed.billable_weight_lb, 4),
-        round(packed.box.cost, 4),
         round(packed.box.interior_dims().volume_cu_in, 4),
+        round(packed.box.cost, 4),
+        packed.box.id,
     )
 
 
