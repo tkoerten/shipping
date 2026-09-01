@@ -104,9 +104,13 @@ class Item:
     max_stack_load_lb: Optional[float] = None
     fragile: bool = False
     # "Pack as is": this item must ship in its own package, never combined with
-    # any other item (SIOC-style). It still gets the smallest catalog overbox
-    # that fits it.
+    # any other item. It still gets the smallest catalog overbox that fits it.
     ship_alone: bool = False
+    # Ship in its own manufacturer's packaging ("NonOverbox" / SIOC): the item's
+    # OWN dimensions are the shipping container -- no catalog overbox, 0 void.
+    # Used for items that already arrive in a sturdy, shippable box (and for
+    # oversized items that fit no catalog box).
+    ship_in_own_container: bool = False
     # Free-text hazmat / commodity classification for the pack slip, e.g.
     # "ORM-D" for limited-quantity ammunition. Display-only; no packing logic.
     goods_type: str = ""
@@ -154,6 +158,7 @@ class ItemUnit:
     max_stack_load_lb: Optional[float]
     fragile: bool
     ship_alone: bool = False
+    ship_in_own_container: bool = False
     goods_type: str = ""
 
     @property
@@ -191,6 +196,7 @@ def expand_items(items: list[Item]) -> list[ItemUnit]:
                     max_stack_load_lb=it.max_stack_load_lb,
                     fragile=it.fragile,
                     ship_alone=it.ship_alone,
+                    ship_in_own_container=it.ship_in_own_container,
                     goods_type=it.goods_type,
                 )
             )

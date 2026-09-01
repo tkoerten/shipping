@@ -132,3 +132,58 @@ def test_copack_conflict_helper():
     b = expand_items([make_item("B", 3, 3, 3, 1.0)])[0]
     assert copack_conflict([a, b]) is not None
     assert copack_conflict([b]) is None
+
+
+# --------------------------------------------------------------------------- #
+# ship_in_own_container / manufacturer packaging (NonOverbox)
+# --------------------------------------------------------------------------- #
+def test_own_container_item_ships_nonoverbox():
+    item = make_item("MFR", 11, 11.4, 12.85, 19.22, ship_in_own_container=True)
+    result = pack([item], _catalog(), CFG64)
+    assert result.ok
+    assert result.total_packages == 1
+    pkg = result.packages[0]
+    assert pkg.box.id == "NonOverbox"
+    assert pkg.box.name == "Manufacturer's Packaging"
+    # The container is exactly the item -> 100% fill, no void.
+    assert abs(pkg.fill_pct - 100.0) < 1e-6
+    assert pkg.void_volume_cu_in < 1e-6
+    assert pkg.box.interior_dims().as_tuple() == (11, 11.4, 12.85)
+    assert abs(pkg.gross_weight_lb - 19.22) < 1e-6
+
+
+def test_oversized_item_ships_when_flagged_own_container():
+    # CUBE-C fits no catalog box, but with ship_in_own_container the order
+    # succeeds: the two smaller items get a box, CUBE-C ships NonOverbox.
+    items = [
+        make_item("BIG-A", 10.8, 6.55, 5.4, 23.26),
+        make_item("MED-B", 10.35, 5.3, 6.2, 5.96),
+        make_item("CUBE-C", 11, 11.4, 12.85, 19.22, ship_in_own_container=True),
+    ]
+    result = pack(items, _catalog(), CFG64)
+    assert result.ok
+    assert result.total_packages == 2
+    nonoverbox = [p for p in result.packages if p.box.id == "NonOverbox"]
+    assert len(nonoverbox) == 1
+    assert nonoverbox[0].placements[0].unit.sku == "CUBE-C"
+    boxed = [p for p in result.packages if p.box.id != "NonOverbox"]
+    assert sorted(pl.unit.sku for pl in boxed[0].placements) == ["BIG-A", "MED-B"]
+
+
+def test_oversized_item_without_flag_still_fails():
+    # Same oversized item, NOT flagged -> the order still cannot be packed.
+    items = [make_item("CUBE-C", 11, 11.4, 12.85, 19.22)]
+    result = pack(items, _catalog(), CFG64)
+    assert not result.ok
+
+
+def test_own_container_item_never_shares_with_others():
+    items = [
+        make_item("MFR", 6, 5, 4, 3.0, ship_in_own_container=True),
+        make_item("PLAIN", 6, 5, 4, 3.0),
+    ]
+    result = pack(items, _catalog(), CFG64)
+    assert result.ok
+    assert result.total_packages == 2
+    mfr = [p for p in result.packages if p.box.id == "NonOverbox"]
+    assert len(mfr) == 1 and len(mfr[0].placements) == 1

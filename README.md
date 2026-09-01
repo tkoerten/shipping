@@ -135,6 +135,11 @@ Beyond dims/weight/rotation/stacking/fragility, each item supports:
   never combined with any other item. It still gets the smallest catalog box
   that fits it. Enforced in one place (`copack_conflict` in `packer.py`), so
   the single-box selector and the splitter inherit it automatically.
+- **`ship_in_own_container`** ("manufacturer's packaging" / NonOverbox / SIOC)
+  — the item's **own dimensions are the shipping container**; no catalog
+  overbox, 0 void, 100% fill. Each such item becomes its own package
+  ("Manufacturer's Packaging"). Use it for items that already arrive in a
+  sturdy shippable box, and for oversized items that fit no catalog box.
 - **`goods_type`** — free-text hazmat / commodity class shown on the pack slip
   (e.g. `ORM-D`); display-only, no packing logic.
 

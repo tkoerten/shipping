@@ -6,11 +6,13 @@ produces the output document (with the mandatory rejection/explanation log).
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Any
 
 from .models import (
     Box,
     Config,
+    Dimensions,
     Item,
     ItemUnit,
     PackResult,
@@ -21,38 +23,87 @@ from .models import (
 from .selection import select_single_box
 from .splitter import split_pack
 
+# The synthetic "box" for an item that ships in its own manufacturer packaging.
+NONOVERBOX_ID = "NonOverbox"
+NONOVERBOX_NAME = "Manufacturer's Packaging"
+
+
+def _nonoverbox_package(unit: ItemUnit, config: Config) -> PackedBox:
+    """A package where the item's OWN dimensions are the container -- no overbox.
+
+    The 'box' is exactly the item, with zero wall/tare/cost, and the fill/void
+    are computed with no clearance or dunnage reserve, so it reads as 100% fill
+    / 0 void (matching how a manufacturer-packaged / SIOC item actually ships).
+    """
+    box = Box(
+        id=NONOVERBOX_ID,
+        name=NONOVERBOX_NAME,
+        interior=Dimensions(unit.length_in, unit.width_in, unit.height_in),
+        wall_thickness_in=0.0,
+        tare_weight_lb=0.0,
+        cost=0.0,
+        max_gross_weight_lb=None,
+        active=True,
+        notes="Ships in its own manufacturer packaging (no overbox).",
+        dimensions_are="interior",
+    )
+    placement = Placement(
+        unit=unit, x=0.0, y=0.0, z=0.0,
+        dx=unit.length_in, dy=unit.width_in, dz=unit.height_in,
+    )
+    tight = replace(config, clearance_in=0.0, dunnage_reserve_pct=0.0)
+    return PackedBox(box=box, placements=[placement], config=tight)
+
 
 def pack(items: list[Item], boxes: list[Box], config: Config) -> PackResult:
     """Cartonize an order.
 
-    Strategy: prefer a single box (fewest packages). Only when no single active
-    box holds everything -- usually the weight cap, not volume -- do we split
-    into multiple packages. A weight overflow is answered by another package,
-    never by a bigger box.
+    Items flagged ``ship_in_own_container`` ship in their own manufacturer
+    packaging (NonOverbox) -- each becomes its own container with 0 void. The
+    remaining items are cartonized normally: prefer a single (smallest) box,
+    else split into the smallest packages. A weight overflow is answered by
+    another package, never a bigger box.
     """
     units = expand_items(items)
     if not units:
         return PackResult(packages=[], explanation=["No items to pack."], ok=False,
                           message="empty order")
 
-    # 1. Single-box attempt.
-    best, log = select_single_box(units, boxes, config)
-    if best is not None:
-        return PackResult(packages=[best], explanation=log, ok=True)
+    own_container = [u for u in units if u.ship_in_own_container]
+    regular = [u for u in units if not u.ship_in_own_container]
 
-    # 2. No single box works. Split if allowed.
-    if not config.allow_split:
-        log.append("No single active box holds the order and splitting is disabled.")
-        return PackResult(packages=[], explanation=log, ok=False,
-                          message="no single box fits; splitting disabled")
+    nb_packages = [_nonoverbox_package(u, config) for u in own_container]
+    nb_log = [
+        f"{u.sku or u.description or 'item'} ships in manufacturer's packaging "
+        f"(NonOverbox), {u.length_in:g}x{u.width_in:g}x{u.height_in:g}in, "
+        f"{u.weight_lb:g}lb."
+        for u in own_container
+    ]
 
-    packages, split_log = split_pack(units, boxes, config)
-    log.extend(split_log)
-    if packages is None:
-        return PackResult(packages=[], explanation=log, ok=False,
-                          message="order cannot be packed within max_packages")
+    # Cartonize the remaining (overboxed) items.
+    reg_packages: list[PackedBox] = []
+    log: list[str] = []
+    if regular:
+        best, log = select_single_box(regular, boxes, config)
+        if best is not None:
+            reg_packages = [best]
+        elif not config.allow_split:
+            log.append("No single active box holds the order and splitting is disabled.")
+            return PackResult(packages=[], explanation=log + nb_log, ok=False,
+                              message="no single box fits; splitting disabled")
+        else:
+            packages, split_log = split_pack(regular, boxes, config)
+            log.extend(split_log)
+            if packages is None:
+                return PackResult(packages=[], explanation=log + nb_log, ok=False,
+                                  message="order cannot be packed within max_packages")
+            reg_packages = packages
 
-    return PackResult(packages=packages, explanation=log, ok=True)
+    return PackResult(
+        packages=reg_packages + nb_packages,
+        explanation=log + nb_log,
+        ok=True,
+    )
 
 
 # --------------------------------------------------------------------------- #

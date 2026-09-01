@@ -71,6 +71,7 @@ export default function App() {
             : Number(i.max_stack_load_lb),
         fragile: !!i.fragile,
         ship_alone: !!i.ship_alone,
+        ship_in_own_container: !!i.ship_in_own_container,
         goods_type: i.goods_type || "",
       }));
       const r = await api.pack(payload, cfg);

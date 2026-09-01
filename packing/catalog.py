@@ -95,6 +95,7 @@ def item_from_dict(d: dict[str, Any]) -> Item:
         ),
         fragile=bool(d.get("fragile", False)),
         ship_alone=bool(d.get("ship_alone", False)),
+        ship_in_own_container=bool(d.get("ship_in_own_container", False)),
         goods_type=str(d.get("goods_type", "")),
     )
 
@@ -112,6 +113,7 @@ def item_to_dict(it: Item) -> dict[str, Any]:
         "max_stack_load_lb": it.max_stack_load_lb,
         "fragile": it.fragile,
         "ship_alone": it.ship_alone,
+        "ship_in_own_container": it.ship_in_own_container,
         "goods_type": it.goods_type,
     }
 

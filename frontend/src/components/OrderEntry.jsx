@@ -17,6 +17,7 @@ function blankRow() {
     max_stack_load_lb: "",
     fragile: false,
     ship_alone: false,
+    ship_in_own_container: false,
     goods_type: "",
   };
 }
@@ -42,6 +43,7 @@ export default function OrderEntry({ items, setItems, config, setConfig, skuCata
         max_stack_load_lb: c.max_stack_load_lb ?? "",
         fragile: c.fragile,
         ship_alone: c.ship_alone ?? false,
+        ship_in_own_container: c.ship_in_own_container ?? false,
         goods_type: c.goods_type ?? "",
       });
     } else {
@@ -148,10 +150,15 @@ function ItemRow({ it, skuCatalog, onChange, onSku, onRemove }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <label className="flex items-center gap-1" title="Must ship in its own package (pack-as-is)">
+        <label className="flex items-center gap-1" title="Must ship in its own package (pack-as-is), in the smallest catalog box">
           <input type="checkbox" checked={!!it.ship_alone}
                  onChange={(e) => onChange({ ship_alone: e.target.checked })} />
           ship alone
+        </label>
+        <label className="flex items-center gap-1" title="Ships in its own manufacturer packaging — no overbox (NonOverbox / SIOC)">
+          <input type="checkbox" checked={!!it.ship_in_own_container}
+                 onChange={(e) => onChange({ ship_in_own_container: e.target.checked })} />
+          own container
         </label>
         <label className="flex items-center gap-1" title="Hazmat / commodity class shown on the pack slip">
           goods

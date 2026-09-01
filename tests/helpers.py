@@ -43,6 +43,7 @@ def make_item(
     max_stack_load_lb: float | None = None,
     fragile: bool = False,
     ship_alone: bool = False,
+    ship_in_own_container: bool = False,
     goods_type: str = "",
 ) -> Item:
     return Item(
@@ -57,5 +58,6 @@ def make_item(
         max_stack_load_lb=max_stack_load_lb,
         fragile=fragile,
         ship_alone=ship_alone,
+        ship_in_own_container=ship_in_own_container,
         goods_type=goods_type,
     )
